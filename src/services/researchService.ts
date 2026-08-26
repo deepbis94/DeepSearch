@@ -1,6 +1,8 @@
+import { getConfig } from "../config";
 import * as repo from "../repositories/research";
 import { runResearchAgent } from "./agent/reactAgent";
 import type { ResearchJob, StructuredReport } from "../types";
+import { logger } from "../utils/logger";
 
 const running = new Set<string>();
 
@@ -10,18 +12,20 @@ async function executeJob(jobId: string, question: string): Promise<void> {
 
   try {
     repo.updateJobStatus(jobId, "running");
-    console.log(`[job ${jobId}] Starting research: ${question}`);
+    logger.info("Research job started", { jobId, question });
 
     const report: StructuredReport = await runResearchAgent(jobId, question);
     repo.createReport(jobId, report);
     repo.updateJobStatus(jobId, "completed");
 
-    console.log(
-      `[job ${jobId}] Completed — ${report.findings.length} findings, ${report.sources.length} sources`
-    );
+    logger.info("Research job completed", {
+      jobId,
+      findings: report.findings.length,
+      sources: report.sources.length,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[job ${jobId}] Failed:`, message);
+    logger.error("Research job failed", { jobId, error: message });
     repo.updateJobStatus(jobId, "failed", message);
   } finally {
     running.delete(jobId);
@@ -35,6 +39,13 @@ export function submitResearch(question: string): ResearchJob {
   }
   if (trimmed.length > 2000) {
     throw new Error("Research question must be 2000 characters or fewer");
+  }
+
+  const { agent } = getConfig();
+  if (running.size >= agent.maxConcurrentJobs) {
+    throw new Error(
+      `Too many concurrent research jobs (max ${agent.maxConcurrentJobs}). Try again shortly.`
+    );
   }
 
   const job = repo.createJob(trimmed);

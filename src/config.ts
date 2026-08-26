@@ -14,6 +14,7 @@ const envSchema = z.object({
   SERPER_API_KEY: z.string().optional(),
   MAX_SEARCH_ITERATIONS: z.coerce.number().default(10),
   MAX_RESULTS_PER_SEARCH: z.coerce.number().default(3),
+  MAX_CONCURRENT_JOBS: z.coerce.number().default(3),
   DATABASE_PATH: z.string().default("./data/deepsearch.db"),
 });
 
@@ -51,6 +52,7 @@ function loadConfig() {
     },
     agent: {
       maxSearchIterations: env.MAX_SEARCH_ITERATIONS,
+      maxConcurrentJobs: env.MAX_CONCURRENT_JOBS,
     },
     databasePath: path.resolve(env.DATABASE_PATH),
   };

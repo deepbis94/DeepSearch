@@ -36,14 +36,23 @@ researchRouter.post(
       return;
     }
 
-    const job = submitResearch(parsed.data.question);
-    res.status(202).json({
-      id: job.id,
-      question: job.question,
-      status: job.status,
-      created_at: job.created_at,
-      message: "Research job accepted. Poll GET /api/research/:id for status.",
-    });
+    try {
+      const job = submitResearch(parsed.data.question);
+      res.status(202).json({
+        id: job.id,
+        question: job.question,
+        status: job.status,
+        created_at: job.created_at,
+        message: "Research job accepted. Poll GET /api/research/:id for status.",
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("Too many concurrent")) {
+        res.status(429).json({ error: message });
+        return;
+      }
+      throw err;
+    }
   })
 );
 
