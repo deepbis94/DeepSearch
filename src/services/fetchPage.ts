@@ -31,6 +31,35 @@ function truncate(text: string): { text: string; truncated: boolean } {
   };
 }
 
+function isPrivateHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (
+    host === "localhost" ||
+    host === "0.0.0.0" ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal")
+  ) {
+    return true;
+  }
+
+  // IPv4 private / loopback / link-local
+  const ipv4 = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (ipv4) {
+    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
+    if (a === 10 || a === 127 || a === 0) return true;
+    if (a === 169 && b === 254) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+  }
+
+  // IPv6 loopback / unique local / link-local
+  if (host === "::1" || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80")) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Fetch a URL and extract main readable text via Mozilla Readability.
  */
@@ -44,6 +73,10 @@ export async function fetchPage(url: string): Promise<FetchedPage> {
 
   if (!["http:", "https:"].includes(parsed.protocol)) {
     throw new Error(`Unsupported URL protocol: ${parsed.protocol}`);
+  }
+
+  if (isPrivateHostname(parsed.hostname)) {
+    throw new Error(`Refusing to fetch private/internal host: ${parsed.hostname}`);
   }
 
   const controller = new AbortController();
