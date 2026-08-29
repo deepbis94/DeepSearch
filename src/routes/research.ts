@@ -61,8 +61,14 @@ researchRouter.post(
  */
 researchRouter.get(
   "/",
-  asyncHandler(async (_req, res) => {
-    const items = listResearch().map(({ job, report }) => ({
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(
+      Math.max(Number(req.query.limit ?? 50) || 50, 1),
+      200
+    );
+    const offset = Math.max(Number(req.query.offset ?? 0) || 0, 0);
+
+    const all = listResearch().map(({ job, report }) => ({
       id: job.id,
       question: job.question,
       status: job.status,
@@ -71,7 +77,14 @@ researchRouter.get(
       error_message: job.error_message,
       report,
     }));
-    res.json({ count: items.length, jobs: items });
+
+    const jobs = all.slice(offset, offset + limit);
+    res.json({
+      count: all.length,
+      limit,
+      offset,
+      jobs,
+    });
   })
 );
 
