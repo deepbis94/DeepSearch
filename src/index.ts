@@ -2,6 +2,7 @@ import { createApp } from "./app";
 import { getConfig } from "./config";
 import { runMigrations } from "./db/migrate";
 import { closeDb } from "./db";
+import { logger } from "./utils/logger";
 
 function main() {
   runMigrations();
@@ -10,14 +11,17 @@ function main() {
   const app = createApp();
 
   const server = app.listen(config.port, () => {
-    console.log(`DeepSearch listening on http://localhost:${config.port}`);
-    console.log(`Search provider: ${config.search.provider}`);
-    console.log(`Model: ${config.openai.model}`);
-    console.log(`Max search iterations: ${config.agent.maxSearchIterations}`);
+    logger.info("DeepSearch started", {
+      port: config.port,
+      searchProvider: config.search.provider,
+      model: config.openai.model,
+      maxSearchIterations: config.agent.maxSearchIterations,
+      maxConcurrentJobs: config.agent.maxConcurrentJobs,
+    });
   });
 
   const shutdown = (signal: string) => {
-    console.log(`\n${signal} received, shutting down...`);
+    logger.info("Shutting down", { signal });
     server.close(() => {
       closeDb();
       process.exit(0);
@@ -31,6 +35,8 @@ function main() {
 try {
   main();
 } catch (err) {
-  console.error("Failed to start:", err);
+  logger.error("Failed to start", {
+    error: err instanceof Error ? err.message : String(err),
+  });
   process.exit(1);
 }

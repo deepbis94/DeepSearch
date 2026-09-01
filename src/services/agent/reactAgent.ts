@@ -13,6 +13,7 @@ import {
   buildContinuePrompt,
 } from "./prompts";
 import { TOOL_DEFINITIONS, executeTool } from "./tools";
+import { logger } from "../../utils/logger";
 
 const MAX_TOOL_ROUNDS = 40;
 
@@ -201,9 +202,11 @@ export async function runResearchAgent(
     if (toolCalls && toolCalls.length > 0) {
       for (const call of toolCalls) {
         if (call.type !== "function") continue;
-        console.log(
-          `[job ${jobId}] tool ${call.function.name} (${call.function.arguments.slice(0, 120)}...)`
-        );
+        logger.debug("Tool call", {
+          jobId,
+          tool: call.function.name,
+          argsPreview: call.function.arguments.slice(0, 120),
+        });
         const result = await executeTool(
           call.function.name,
           call.function.arguments,
@@ -260,7 +263,7 @@ export async function runResearchAgent(
     }
   }
 
-  console.warn(`[job ${jobId}] Falling back to synthesizeFallback`);
+  logger.warn("Falling back to synthesizeFallback", { jobId });
   repo.addTrailEvent(ctx.jobId, "synthesize", { method: "fallback" });
   return synthesizeFallback(question, ctx);
 }
