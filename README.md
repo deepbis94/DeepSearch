@@ -70,6 +70,7 @@ Server listens on `http://localhost:3000` by default.
 | `SERPER_API_KEY` | Serper key | required if provider=serper |
 | `MAX_SEARCH_ITERATIONS` | Max `search_web` calls | `10` |
 | `MAX_RESULTS_PER_SEARCH` | Results kept per query | `3` |
+| `MAX_CONCURRENT_JOBS` | In-flight research jobs | `3` |
 | `DATABASE_PATH` | SQLite file path | `./data/deepsearch.db` |
 | `PORT` | HTTP port | `3000` |
 
@@ -102,7 +103,13 @@ Includes every search query, URL, fetched content metadata, finding, and evaluat
 ### List all jobs
 
 ```bash
-curl -s http://localhost:3000/api/research
+curl -s 'http://localhost:3000/api/research?limit=20&offset=0'
+```
+
+### Poll until complete
+
+```bash
+./scripts/poll-research.sh "What are the latest PHP 8.4 deprecations?"
 ```
 
 ## Report format
@@ -160,8 +167,8 @@ npm run test:research -- "What are the latest PHP 8.4 deprecations?"
 
 ## Production notes
 
-- Jobs are accepted with `202` and processed in-process via `setImmediate`. For multi-instance production, move execution to a queue (BullMQ, SQS, etc.).
-- Page fetches use a timeout, content-length caps, and Readability to keep context size manageable.
+- Jobs are accepted with `202` and processed in-process via `setImmediate`. Concurrent jobs are capped by `MAX_CONCURRENT_JOBS` (HTTP `429` when full). For multi-instance production, move execution to a queue (BullMQ, SQS, etc.).
+- Page fetches refuse private/loopback hosts, use a timeout, content-length caps, and Readability to keep context size manageable.
 - Search budget is enforced in the `search_web` tool (`MAX_SEARCH_ITERATIONS`).
 - Secrets stay in `.env` (never commit real keys).
 
