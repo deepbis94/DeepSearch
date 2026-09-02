@@ -67,22 +67,27 @@ researchRouter.get(
       200
     );
     const offset = Math.max(Number(req.query.offset ?? 0) || 0, 0);
+    const statusFilter =
+      typeof req.query.status === "string" ? req.query.status : undefined;
 
-    const all = listResearch().map(({ job, report }) => ({
-      id: job.id,
-      question: job.question,
-      status: job.status,
-      created_at: job.created_at,
-      completed_at: job.completed_at,
-      error_message: job.error_message,
-      report,
-    }));
+    const all = listResearch()
+      .filter(({ job }) => !statusFilter || job.status === statusFilter)
+      .map(({ job, report }) => ({
+        id: job.id,
+        question: job.question,
+        status: job.status,
+        created_at: job.created_at,
+        completed_at: job.completed_at,
+        error_message: job.error_message,
+        report,
+      }));
 
     const jobs = all.slice(offset, offset + limit);
     res.json({
       count: all.length,
       limit,
       offset,
+      status: statusFilter ?? null,
       jobs,
     });
   })
