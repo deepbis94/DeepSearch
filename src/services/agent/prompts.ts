@@ -27,6 +27,8 @@ Quality bar:
 - Every finding must have a real source URL you fetched or searched.
 - Do not invent URLs or facts.
 - Be precise; distinguish facts from speculation.
+- Prefer recent sources when the question asks about "latest" changes.
+- Deduplicate findings that say the same thing with different wording.
 - Max ${"{MAX_SEARCHES}"} search_web calls total for this job.`;
 
 export function buildUserPrompt(ctx: AgentContext): string {
