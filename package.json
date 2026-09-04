@@ -9,6 +9,7 @@
     "dev": "tsx watch src/index.ts",
     "migrate": "tsx src/db/migrate.ts",
     "test:research": "tsx scripts/test-research.ts",
+    "poll:research": "bash scripts/poll-research.sh",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
